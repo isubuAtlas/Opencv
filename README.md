@@ -1,4 +1,5 @@
-İHA YAZILIM AlGORİTMALARI DAĞILIM ŞEMASI
+##İHA YAZILIM AlGORİTMALARI DAĞILIM ŞEMASI
+
 Siha_algoritma/
 gorev_yoneticisi.py # Ana program, döngü, başlatma
 durum_makinesi.py # Görev durumları (KALKIŞ, ARAMA, KİLİT, QR...)
