@@ -15,7 +15,7 @@ rota_planlama.py # Görev noktalarını yükleme, sıralama
 veri_kaydi.py # Uçuş verilerini ve deneyimleri kaydetme
 logger.py # Loglama sistemi
 ```
-```
+```bash
 \görüntü_işleme # Görüntü işleme modülü
 \nesne_tespiti.py # YOLO ile nesne tespiti
 \nesne_takibi.py # Nesne takibi (CSRT veya Re3 benzeri)
