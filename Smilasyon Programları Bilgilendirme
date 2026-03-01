@@ -1,0 +1,139 @@
+Projenizde Kullanmayı Düşündüğünüz Yazılımların Rolleri
+Projeniz oldukça kapsamlı: otonom uçuş, görüntü işleme ile hedef kilitleme, kamikaze dalışı ve yerdeki QR kod okuma, ayrıca yer istasyonuna anlık görüntü gönderme. Bahsettiğiniz yazılımlar, bu görevleri gerçekleştirmek için ihtiyaç duyacağınız temel araçlardır. Her birinin projedeki işlevini ve nasıl entegre olacağını aşağıda detaylandırıyorum.
+
+1. ArduPilot (Otopilot Yazılımı)
+Ne işe yarar?
+İHA'nızın uçuş kontrolünü sağlayan açık kaynaklı otopilot yazılımıdır. İHA'nın stabilizasyonu, otonom görev yürütme, rota takibi, sensör füzyonu (GPS, IMU, barometre vb.) gibi temel uçuş işlevlerini yerine getirir.
+
+Projenizde nasıl kullanılır?
+
+Temel uçuş kontrolü: İHA'nın kalkış, seyir, dalış ve iniş gibi manevralarını ArduPilot yönetir.
+
+Görev planlama: Mission Planner veya QGC ile yüklediğiniz görev dosyasındaki waypoint'leri (örneğin hedef bölgeye gitme, dalış noktasına ulaşma) takip eder.
+
+Hedef kilitleme entegrasyonu: Görüntü işleme bilgisayarı (örneğin Raspberry Pi) hedefi tespit ettiğinde, hedefin koordinatlarını veya İHA'ya göre bağıl konumunu ArduPilot'a MAVLink ile iletebilirsiniz. ArduPilot, bu bilgiyi kullanarak İHA'yı hedefe yönlendirebilir (örneğin, "hedefi takip et" modu).
+
+Dalış manevrası: Kamikaze dalışı için ArduPilot'un "Guided" veya "Auto" modlarında özel bir davranış tanımlayabilirsiniz. Ancak dalış sırasında hız, irtifa ve açı kontrolünü ArduPilot sağlar.
+
+Önemli Not: ArduPilot, görüntü işleme yapmaz; sadece uçuş kontrolünü üstlenir. Görüntü işleme için ayrı bir bilgisayar (onboard computer) gereklidir. Bu bilgisayar ArduPilot ile MAVLink üzerinden haberleşir.
+
+2. MAVLink (İletişim Protokolü)
+Ne işe yarar?
+İHA (ArduPilot), yer istasyonu ve onboard bilgisayar arasında veri alışverişi için kullanılan hafif ve yaygın bir iletişim protokolüdür. Telemetri, kumanda, durum bilgisi, özel mesajlar gibi verileri taşır.
+
+Projenizde nasıl kullanılır?
+
+Onboard bilgisayar ↔ ArduPilot iletişimi: Görüntü işleme bilgisayarı, hedef kilitlendiğinde hedef koordinatlarını veya "hedef takip edilsin" komutunu MAVLink mesajı olarak ArduPilot'a gönderir.
+
+Yer istasyonuna veri aktarımı: İHA'dan yer istasyonuna (QGC) telemetri (konum, pil durumu, hız vb.) ve özel mesajlar (örneğin "hedef kilitlendi", "QR kod okundu") MAVLink ile iletilir.
+
+Video akışı için değil: MAVLink genellikle düşük bant genişlikli veriler için kullanılır. Anlık görüntü (fotoğraf veya video) göndermek için ayrı bir video aktarım sistemi (örneğin WiFi ile RTSP stream) kurmanız gerekir. Ancak küçük boyutlu görüntüleri (örn. QR kod çözülmüş metin) MAVLink özel mesajlarıyla gönderebilirsiniz.
+
+3. Gazebo (3B Simülasyon Ortamı)
+Ne işe yarar?
+Robotik simülasyonları için kullanılan güçlü bir araçtır. İHA'nızın fiziksel modelini oluşturup, sensörleri (kamera, lidar, IMU) simüle edebilir, gerçekçi ortamlarda uçuş testleri yapabilirsiniz.
+
+Projenizde nasıl kullanılır?
+
+SITL (Software In The Loop) simülasyonu: ArduPilot'un SITL versiyonunu Gazebo ile entegre ederek, İHA'nızın uçuş dinamiklerini ve kontrol algoritmalarını gerçek donanım olmadan test edebilirsiniz.
+
+Görüntü işleme algoritmalarının testi: Gazebo'da sanal bir kamera oluşturup, bu kameradan alınan görüntüler üzerinde hedef kilitleme ve QR kod okuma algoritmalarınızı çalıştırabilirsiniz. Böylece algoritmalarınızı gerçek uçuş öncesinde güvenle geliştirebilirsiniz.
+
+Dalış manevrası simülasyonu: Kamikaze dalışının dinamiklerini (hız, açı, irtifa kaybı) Gazebo'da simüle ederek, İHA'nın bu manevrayı güvenli bir şekilde yapıp yapamayacağını görebilirsiniz.
+
+Entegrasyon: ArduPilot SITL, Gazebo ile MAVLink üzerinden haberleşir. Gazebo'daki İHA modeli, ArduPilot'tan gelen motor komutlarını uygular ve sensör verilerini (kamera görüntüsü dahil) ArduPilot'a geri gönderir.
+
+4. Log Graph (Uçuş Kaydı Analiz Aracı)
+Ne işe yarar?
+ArduPilot'un ürettiği uçuş loglarını (genellikle .bin veya .log dosyaları) görselleştirip analiz etmenizi sağlar. Mission Planner içinde yer alan "Log Graph" aracı veya bağımsız araçlar (örneğin APM Planner) bu iş için kullanılır.
+
+Projenizde nasıl kullanılır?
+
+Test uçuşlarının analizi: Gerçek veya simüle edilmiş uçuşlardan sonra, İHA'nın performansını (irtifa, hız, pil tüketimi, GPS doğruluğu) inceleyebilirsiniz.
+
+Dalış manevrasının değerlendirmesi: Dalış sırasında İHA'nın açısal hızlarını, dikey hızını, hedefe olan uzaklığını loglardan çekerek manevranın başarısını ölçebilirsiniz.
+
+Hata ayıklama: Beklenmeyen bir davranış olduğunda logları inceleyerek sorunun kaynağını bulabilirsiniz (örneğin, hedef kilitleme sırasında İHA'nın neden sapma yaptığı).
+
+5. FlightGear (Gelişmiş Uçuş Simülatörü)
+Ne işe yarar?
+Gerçekçi uçuş dinamikleri ve yüksek kaliteli görsellik sunan bir uçuş simülatörüdür. Gazebo'ya alternatif veya tamamlayıcı olarak kullanılabilir.
+
+Projenizde nasıl kullanılır?
+
+Görsel doğrulama: Özellikle kamikaze dalışı gibi manevraların görsel olarak daha gerçekçi simülasyonunu isterseniz FlightGear'ı tercih edebilirsiniz. ArduPilot SITL, FlightGear ile de entegre çalışabilir.
+
+Pilotaj eğitimi (opsiyonel): Eğer projede manuel kumanda da olacaksa, FlightGear ile yer istasyonundan sanal uçuş yapılabilir.
+
+Ancak: Görüntü işleme testleri için Gazebo daha esnektir (çünkü robotik sensörleri simüle etmek üzere tasarlanmıştır). FlightGear daha çok uçuş dinamikleri ve görsellik için kullanılır.
+
+6. QGroundControl (Yer İstasyonu Yazılımı)
+Ne işe yarar?
+Modern, kullanıcı dostu bir yer istasyonu yazılımıdır. İHA ile iletişim kurar, telemetri gösterir, görev yükleme, parametre ayarlama, uçuş kontrolü gibi işlevler sunar. Ayrıca MAVLink üzerinden özel mesajları görüntüleyebilir ve video akışını entegre edebilir.
+
+Projenizde nasıl kullanılır?
+
+Anlık görüntü ve durum izleme: İHA'dan gelen telemetri (konum, pil, hız) yanında, onboard bilgisayarın gönderdiği "hedef kilitlendi", "QR kod okundu" gibi özel MAVLink mesajlarını QGC üzerinde görüntüleyebilirsiniz.
+
+Video akışı entegrasyonu: QGC, UDP veya RTSP üzerinden video akışını destekler. İHA'daki kameradan alınan görüntüyü (hedef kilitleme anında) QGC'de görmek için ayrı bir video aktarım sistemi kurup QGC'ye entegre edebilirsiniz.
+
+Görev kontrolü: Uçuş sırasında görevi duraklatma, hedef değiştirme gibi müdahaleleri QGC üzerinden yapabilirsiniz.
+
+Özelleştirme: QGC açık kaynaklıdır. İhtiyacınıza göre özel MAVLink mesajlarını işleyecek şekilde değiştirebilir veya eklentiler geliştirebilirsiniz.
+
+7. Mission Planner (Yer İstasyonu Yazılımı)
+Ne işe yarar?
+ArduPilot için en kapsamlı yer istasyonu yazılımıdır. Görev planlama, parametre yapılandırma, uçuş logu analizi, firmware yükleme gibi birçok gelişmiş özellik sunar.
+
+Projenizde nasıl kullanılır?
+
+Görev planlama: Dalış yapılacak bölgeyi, hedef koordinatlarını, uçuş rotasını Mission Planner üzerinden kolayca planlayıp İHA'ya yükleyebilirsiniz.
+
+Parametre ayarları: ArduPilot'un PID katsayıları, uçuş modları, sensör kalibrasyonu gibi ayarlarını yapmak için Mission Planner idealdir.
+
+Log analizi: Uçuş sonrası logları detaylı inceleyerek performans değerlendirmesi yapabilirsiniz.
+
+Test ve kalibrasyon: Sensör kalibrasyonu, pusula ayarı, ESC kalibrasyonu gibi işlemleri Mission Planner ile yaparsınız.
+
+QGC vs. Mission Planner: QGC daha modern bir arayüze sahip ve mobil cihazlarda da çalışır; Mission Planner ise masaüstü için daha kapsamlıdır. İkisini birlikte kullanabilirsiniz: Görev planlamayı Mission Planner'da yapıp, uçuş sırasında QGC ile takip edebilirsiniz.
+
+Proje Akışında Bu Yazılımların Birlikte Kullanımı
+Simülasyon Aşaması:
+
+Gazebo + ArduPilot SITL ile İHA modeli oluşturun.
+
+Görüntü işleme algoritmalarınızı (OpenCV ile) onboard bilgisayar yerine geliştirme bilgisayarınızda çalıştırıp Gazebo'dan sanal kamera görüntüsü alın.
+
+MAVLink üzerinden ArduPilot ile haberleşerek hedef kilitleme ve dalış komutlarını test edin.
+
+QGroundControl ile simülasyonu izleyin, telemetriyi görün.
+
+Uçuş loglarını Mission Planner ile analiz edin.
+
+Gerçek Donanım Aşaması:
+
+İHA'ya ArduPilot yüklü bir uçuş kontrol kartı (Pixhawk gibi) takın.
+
+Görüntü işleme için bir onboard bilgisayar (Raspberry Pi, NVIDIA Jetson) ekleyin. Bu bilgisayar kameradan görüntü alır, hedef kilitleme ve QR okuma yapar, MAVLink ile uçuş kontrol kartına komut gönderir.
+
+Yer istasyonunda QGroundControl (veya Mission Planner) ile telemetri alın, video akışını izleyin.
+
+Mission Planner ile uçuş öncesi görev planlaması ve sonrası log analizi yapın.
+
+İletişim Altyapısı:
+
+MAVLink: Telemetri radyosu (örn. 433 MHz veya 915 MHz) ile uçuş kontrol kartı ↔ yer istasyonu arasında.
+
+Video: WiFi veya ayrı bir video vericisi ile onboard kamera görüntüsünü yer istasyonuna aktarın. QGC'ye entegre edin.
+
+Onboard bilgisayar ↔ uçuş kontrol kartı arasında seri bağlantı (UART) ile MAVLink.
+
+Özet Tablo
+Yazılım	Görevi	Projedeki Kullanımı
+ArduPilot	Uçuş kontrolü	İHA'nın stabilizasyonu, rota takibi, dalış manevrası kontrolü
+MAVLink	İletişim protokolü	Onboard bilgisayar, uçuş kontrol kartı ve yer istasyonu arasında veri aktarımı
+Gazebo	3B simülasyon	İHA modeli, sensör simülasyonu, görüntü işleme algoritmalarının testi
+Log Graph	Uçuş logu analizi	Test uçuşlarının performans değerlendirmesi, dalış manevrasının incelenmesi
+FlightGear	Gelişmiş uçuş simülatörü	Görsel olarak gerçekçi simülasyon (opsiyonel)
+QGroundControl	Yer istasyonu (modern)	Anlık telemetri izleme, video akışı, özel MAVLink mesajlarını gösterme
+Mission Planner	Yer istasyonu (kapsamlı)	Görev planlama, parametre ayarları, log analizi, kalibrasyon
