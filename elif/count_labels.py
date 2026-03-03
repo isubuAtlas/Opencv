@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import os
 
 label_folders = [
